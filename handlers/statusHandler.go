@@ -2,12 +2,29 @@ package handlers
 
 import (
 	"assignment1/consts"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 )
 
+type Status struct {
+	CountriesNowStatus  string `json:"countriesnowstatus"`
+	RESTCountriesStatus string `json:"restcountriesstatus"`
+	Version             string `json:"version"`
+	Uptime              int64  `json:"uptime"`
+}
+
+var UptimeStart int64
+
+func InitializeUptime() {
+	UptimeStart = time.Now().Unix()
+}
+
 func StatusHandler(w http.ResponseWriter, r *http.Request) {
+
+	status := &Status{}
 
 	// CountriesNow url
 	urlCN := consts.COUNTRIESNOWURL + "countries/population/cities"
@@ -35,12 +52,19 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
 
 		// TODO: handle error
 
-		fmt.Println(errRC.Error())
+		fmt.Println(errRC.Error()) // debug
 	}
 	defer respRC.Body.Close()
 
-	// CountriesNow status code   and   REST Countries status code
-	fmt.Fprint(w, "CountriesNow API status:   ", respCN.Status, "\n")
-	fmt.Fprint(w, "REST Countries API status: ", respRC.Status)
+	status.CountriesNowStatus = respCN.Status
+	status.RESTCountriesStatus = respRC.Status
+	status.Version = "v1"
+	status.Uptime = time.Now().Unix() - UptimeStart
 
+	// Pretty-prints json from struct
+	jsonStatus, errjson := json.MarshalIndent(status, "", "    ")
+	if errjson != nil {
+		fmt.Printf("Error: %s", errjson.Error())
+	}
+	fmt.Fprint(w, string(jsonStatus))
 }
