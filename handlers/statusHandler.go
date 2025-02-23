@@ -38,7 +38,7 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer respNOW.Body.Close()
 
-	urlREST := consts.RESTCOUNTRIESURL + "capital/oslo"
+	urlREST := consts.RESTCOUNTRIESURL + "alpha/gn?fields=population"
 
 	// Makes a get request and handles errors, similarly to CountriesNow
 	respREST, errRC := http.Get(urlREST)
@@ -48,7 +48,7 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer respREST.Body.Close()
 
-	status := &Status{}
+	status := Status{}
 	status.CountriesNowStatus = respNOW.Status
 	status.RESTCountriesStatus = respREST.Status
 	status.Version = "v1"
