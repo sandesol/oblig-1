@@ -11,6 +11,7 @@ func main() {
 
 	handlers.InitializeUptime()
 
+	http.HandleFunc("/countryinfo/v1/population/{two_letter_country_code}", handlers.PopulationHandler)
 	http.HandleFunc("/countryinfo/v1/info/{two_letter_country_code}", handlers.InfoHandler)
 	http.HandleFunc("/countryinfo/v1/status", handlers.StatusHandler)
 
