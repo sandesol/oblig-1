@@ -26,9 +26,7 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
 
 	urlNOW := consts.COUNTRIESNOWURL + "countries/population/cities"
 
-	payload := strings.NewReader(`{
-		"city": "oslo"
-	}`)
+	payload := strings.NewReader(`{"city": "oslo"}`)
 
 	// Makes a post request and handles errors. Defers closing the body response.
 	respNOW, errNOW := http.Post(urlNOW, "application/json", payload)

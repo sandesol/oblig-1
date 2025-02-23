@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type Country struct {
@@ -20,11 +21,10 @@ type Country struct {
 	Borders    []string          `json:"borders"`
 	Flag       string            `json:"flag"`
 	Capital    []string          `json:"capital"`
-	Cities     []string          `json:"cities"`
+	Cities     []string          `json:"data"`
 }
 
 func InfoHandler(w http.ResponseWriter, r *http.Request) {
-	//fmt.Println(len(r.PathValue("two_letter_country_code")), r.URL.Query().Get("limit"), r.URL.Port())
 
 	country := Country{}
 	iso := r.PathValue("two_letter_country_code")
@@ -32,25 +32,20 @@ func InfoHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error: iso-2 can only be a 2 letter code. Error code "+fmt.Sprint(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
+
+	FetchCountry(w, &country, iso) // fetches countries first, so we can use country name as a parameter in the post request in FetchCities()
+
 	query := r.URL.Query().Get("limit")
 	if query == "" {
 		fmt.Println("No limit :)") // DELETEME
 
-		//
+		FetchCities(w, &country, 10) // No limit set, defaults to 10
 
-		//
-
-		//
-
-		//
-
-		FetchCountry(w, r, 10, &country, iso) // default limit is 10 (when no limit was explicitly given by the user)
-
-		//
 	} else {
 		fmt.Println("A limit have been set :))))") // DELETEME
 
-		limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+		limit, err := strconv.Atoi(r.URL.Query().Get("limit")) // converts gets limit, converts it to int
+
 		if err != nil {
 			http.Error(w, "Error: limit must be an integer. Error code "+fmt.Sprint(http.StatusBadRequest), http.StatusBadRequest)
 			return
@@ -59,58 +54,90 @@ func InfoHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Error: limit must be a positive integer. Error code "+fmt.Sprint(http.StatusBadRequest), http.StatusBadRequest)
 			return
 		}
-		//
 
-		//
+		FetchCities(w, &country, limit) // passed both tests, limit is valid and we can fetch cities
 
-		//
-
-		//
-
-		FetchCountry(w, r, limit, &country, iso)
-
-		//
 	}
 
-	errprint := PrintCountry(w, country)
+	errprint := PrintCountry(w, country) // prettyprints the complete country
 	if errprint != nil {
 		fmt.Println(errprint.Error())
 	}
-
-	//
-
-	//
-
-	//
-
-	fmt.Fprint(w, "Success!, nothing to show yet though...") // DELETEME
-
 }
 
 /**
  *	For some odd reason, r.PathValue can only be read once, which means we have to pass iso as a parameter
  *
- *
+ *	Country is passed by reference
  */
-func FetchCountry(w http.ResponseWriter, r *http.Request, limit int, country *Country, iso string) {
+func FetchCountry(w http.ResponseWriter, c *Country, iso string) {
 
-	resp, err := http.Get(consts.RESTCOUNTRIESURL + "alpha/" + iso + consts.RESTCOUNTRIESFILTER)
-	if err != nil {
-		fmt.Println(err.Error()) // debug
+	resp, errGet := http.Get(consts.RESTCOUNTRIESURL + "alpha/" + iso + consts.RESTCOUNTRIESFILTER)
+	if errGet != nil {
+		fmt.Println("(FetchCountry) Error in http.Get: ", errGet.Error()) // debug
+		return
 	}
 	defer resp.Body.Close()
 
-	body, err1 := io.ReadAll(resp.Body)
-	if err1 != nil {
+	body, errReadAll := io.ReadAll(resp.Body)
+	if errReadAll != nil {
+		fmt.Println("(FetchCountry) Error in io.ReadAll: ", errReadAll.Error()) // debug
 		return
 	}
 
-	err2 := json.Unmarshal(body, country)
-	if err2 != nil {
-		fmt.Println("There was an error parsing json: ", err2.Error())
+	errJson := json.Unmarshal(body, c)
+	if errJson != nil {
+		fmt.Println("(FetchCountry) There was an error parsing json: ", errJson.Error())
 	}
 }
 
+/**
+ *
+ * Fetches all cities via countriesNow
+ *
+ * Country is passed by reference
+ */
+func FetchCities(w http.ResponseWriter, c *Country, limit int) {
+
+	payload := strings.NewReader("{\"country\": \"" + c.Name.Common + "\"}")
+	fmt.Println(c.Name.Common)
+
+	resp, errNOW := http.Post(consts.COUNTRIESNOWURL+"countries/cities", "application/json", payload)
+	if errNOW != nil {
+		fmt.Println("(FetchCities) Error in POST request: ", errNOW.Error()) // debug
+		return
+	}
+	defer resp.Body.Close()
+
+	body, errReadAll := io.ReadAll(resp.Body)
+	if errReadAll != nil {
+		fmt.Println("(FetchCities) Error in io.ReadAll: ", errReadAll.Error()) // debug
+		return
+	}
+
+	// we use a temporary struct to wrap cities in, because it's less annoying to deal with than working with the original
+	var temp struct {
+		Cities []string `json:"data"`
+	}
+
+	errJson := json.Unmarshal(body, &temp)
+	if errJson != nil {
+		fmt.Println("(FetchCities) There was an error parsing json: ", errJson.Error())
+	}
+
+	// appends the first 'limit' elements of the temporary structs slice into the original
+	c.Cities = append(c.Cities, temp.Cities[:limit]...)
+}
+
+/**
+ *
+ * Prettyprints based on the Country struct
+ * In reality we make a similar struct to prettyprint based on how it looks like in the assignment
+ * The reason we make a new one and don't use Country, is because it's not correctly formatted
+ * This may not be the best workaround, but eh
+ *
+ * Returns an error if it json.MarshallIndent failed, and nil otherwise
+ */
 func PrintCountry(w http.ResponseWriter, c Country) error {
 	var country struct {
 		Name       string            `json:"name"`
