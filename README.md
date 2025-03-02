@@ -2,6 +2,90 @@
 
 
 
+## Info documentation
+
+### Structure
+
+The info page provides the following fields in **`json`** format for a given country: 
++ name (string)
++ continents (list of strings)
++ languages (object)
++ population (integer)
++ borders (list of strings)
++ flag (string)
++ capital (list of strings)
++ cities (list of strings)
+
+### Syntax
+
+The basic syntax is `http://localhost:8080/countryinfo/v1/info/{iso}`               ***CHANGE LINK***
+
+`{iso}` is the two-letter iso code for a given country, eg. `no` for Norway.
+
+Optionally, you can set a limit for how many cities to be retrieved. When no limit is given, it will be 10 by default.
+
+The syntax for setting a limit is `http://localhost:8080/countryinfo/v1/info/{iso}?limit={limit}` where `{limit}` is the limit, eg. `30`.
+
+### Example 
+
+The call to
+
+`http://localhost:8080/countryinfo/v1/info/no?limit=25`
+
+will give the following **`json`** 
+
+```json
+{
+    "name": "Norway",
+    "continents": [
+        "Europe"
+    ],
+    "languages": {
+        "nno": "Norwegian Nynorsk",
+        "nob": "Norwegian Bokmål",
+        "smi": "Sami"
+    },
+    "population": 5379475,
+    "borders": [
+        "FIN",
+        "SWE",
+        "RUS"
+    ],
+    "flag": "🇳🇴",
+    "capital": [
+        "Oslo"
+    ],
+    "cities": [
+        "Abelvaer",
+        "Adalsbruk",
+        "Adland",
+        "Agotnes",
+        "Agskardet",
+        "Aker",
+        "Akkarfjord",
+        "Akrehamn",
+        "Al",
+        "Alen",
+        "Algard",
+        "Almas",
+        "Alta",
+        "Alvdal",
+        "Amli",
+        "Amot",
+        "Ana-Sira",
+        "Andalsnes",
+        "Andenes",
+        "Angvika",
+        "Ankenes",
+        "Annstad",
+        "Ardal",
+        "Ardalstangen",
+        "Arendal"
+    ]
+}
+```
+
+
 ## Getting started
 
 To make it easy for you to get started with GitLab, here's a list of recommended next steps.
