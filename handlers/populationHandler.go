@@ -33,20 +33,20 @@ func PopulationHandler(w http.ResponseWriter, r *http.Request) {
 
 		errPopNoArgs := FetchPopulation(w, iso3, "", "")
 		if errPopNoArgs != nil {
-			fmt.Fprintln(w, "Error when fetching population: "+errPopNoArgs.Error()) // TODO
+			fmt.Fprintln(w, errPopNoArgs.Error()) // TODO
 			return
 		}
 
 	} else {
 		timeframe := strings.Split(limit, "-")
-		fmt.Fprintln(w, "Limit with args: \""+limit+"\"       timeframe:", timeframe)
+		fmt.Fprintln(w, "Limit with args: \""+limit+"\"       timeframe:", timeframe) // DELETEME
 		if len(timeframe) != 2 {
-			http.Error(w, "Expected 2 arguments, got "+fmt.Sprint(len(timeframe)), http.StatusBadRequest) // TODO
-			return                                                                                        // need 2 args
+			http.Error(w, "Expected 2 arguments, got "+fmt.Sprint(len(timeframe))+". (Error code 202)", http.StatusBadRequest) // :)
+			return                                                                                                             // need 2 args
 		}
 		if timeframe[0] == "" || timeframe[1] == "" {
-			http.Error(w, "One or more arguments are empty", http.StatusBadRequest) // TODO
-			return                                                                  // one or more empty args
+			http.Error(w, "One or more arguments are empty. (Error code 203)", http.StatusBadRequest) // :)
+			return                                                                                    // one or more empty args
 		}
 
 		//
@@ -102,9 +102,13 @@ func GetCountry(w http.ResponseWriter, iso string) (string, error) {
 
 //
 
-//
+// TODO : fix 9223372036854775807 ????
 
-//
+// TODO : fix both numbers less than least issue ??????????
+
+// TODO : ---||--- for larger numbers
+
+// TODO : (quick), remove error return in fetchpopulation?
 
 func FetchPopulation(w http.ResponseWriter, iso3, min, max string) error {
 	var start, end int
@@ -112,7 +116,8 @@ func FetchPopulation(w http.ResponseWriter, iso3, min, max string) error {
 	if min != "" {
 		s, errConvStart := strconv.Atoi(min)
 		if errConvStart != nil {
-			return errors.New("start year must be a number") // TODO
+			http.Error(w, "Start year must be a number. (Error code 204.1)", http.StatusBadRequest) // :) 400
+			return errors.New("")                                                                   // :) ???
 		}
 		start = s
 	} else {
@@ -121,14 +126,16 @@ func FetchPopulation(w http.ResponseWriter, iso3, min, max string) error {
 	if max != "" {
 		e, errConvEnd := strconv.Atoi(max)
 		if errConvEnd != nil {
-			return errors.New("end year must be a number") // TODO
+			http.Error(w, "End year must be a number. (Error code 204.2)", http.StatusBadRequest) // :) 400
+			return errors.New("")                                                                 // :) ???
 		}
 		end = e
 	} else {
 		end = time.Now().Year()
 	}
 	if start > end {
-		return errors.New("start year is greater than end year") // TODO
+		http.Error(w, "Start year is greater than end year. (Error code 205)", http.StatusBadRequest) // :) 400
+		return errors.New("")                                                                         // :) ???
 	}
 
 	var wrapper struct {
@@ -147,8 +154,9 @@ func FetchPopulation(w http.ResponseWriter, iso3, min, max string) error {
 	resp, errPost := http.Post(consts.COUNTRIESNOWURL+"countries/population", "application/json", payload)
 
 	if errPost != nil {
-		log.Print("(FetchPopulation) Error in post request: ", errPost.Error())                  // TODO
-		return errors.New(fmt.Sprint(http.StatusInternalServerError) + " internal server error") // TODO
+		log.Println("(FetchPopulation) Error in post request: ", errPost.Error()) // :)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)    // :) 500
+		return errors.New("")                                                     // :) ???
 	}
 	defer resp.Body.Close()
 
@@ -156,12 +164,16 @@ func FetchPopulation(w http.ResponseWriter, iso3, min, max string) error {
 
 	body, errReadAll := io.ReadAll(resp.Body)
 	if errReadAll != nil {
-		return errors.New("error in io.ReadAll: " + errReadAll.Error()) // TODO
+		log.Println("(FetchPopulation) Error in io.ReadAll: ", errReadAll.Error()) // :)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)     // :) 500
+		return errors.New("")                                                      // :) ???
 	}
 
 	errJson := json.Unmarshal(body, &wrapper)
 	if errJson != nil {
-		fmt.Println("(FetchCities) There was an error parsing json: ", errJson.Error()) // TODO
+		log.Println("(FetchCities) There was an error parsing json: ", errJson.Error()) // TODO
+		http.Error(w, "Internal server error", http.StatusInternalServerError)          // :) 500
+		return errors.New("")                                                           // :) ???
 	}
 
 	var i, j = 0, 0
@@ -187,7 +199,7 @@ func FetchPopulation(w http.ResponseWriter, iso3, min, max string) error {
 	}
 	wrapper.Mean = sum / len(wrapper.Data.PopulationCounts)
 
-	fmt.Print("\n\n\n\n\n\n", wrapper.Mean, "\n\n\n\n\n\n") // DELETEME
+	fmt.Print("\n\n\n\n\n\n", 0xFFFF, "\n\n\n\n\n\n") // DELETEME
 
 	//
 

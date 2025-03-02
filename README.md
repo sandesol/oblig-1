@@ -6,6 +6,8 @@
 
 ### Structure
 
+This path retrieves all cities in the country with the given iso-2 code.
+
 The info page provides the following fields in **`json`** format for a given country: 
 + name (string)
 + continents (list of strings)
@@ -18,13 +20,15 @@ The info page provides the following fields in **`json`** format for a given cou
 
 ### Syntax
 
-The basic syntax is `http://localhost:8080/countryinfo/v1/info/{iso}`               ***CHANGE LINK***
+The general syntax is `http://localhost:8080/countryinfo/v1/info/{:iso}`               ***CHANGE LINK***  
 
-`{iso}` is the two-letter iso code for a given country, eg. `no` for Norway.
+`{:iso}` is the two-letter iso code for a given country, eg. `no` for Norway.
 
 Optionally, you can set a limit for how many cities to be retrieved. When no limit is given, it will be 10 by default.
 
-The syntax for setting a limit is `http://localhost:8080/countryinfo/v1/info/{iso}?limit={limit}` where `{limit}` is the limit, eg. `30`.
+The syntax for setting a limit is `http://localhost:8080/countryinfo/v1/info/{:iso}{?limit={:limit}}` where the whole `{?limit=...}` block is optional, and `{:limit}` is the limit, eg. `30`.
+
+Leaving `{?limit}` empty as in `...?limit` or `...?limit=` will be treated as having no limit, and will return all cities.
 
 ### Example 
 
@@ -32,7 +36,7 @@ The call to
 
 `http://localhost:8080/countryinfo/v1/info/no?limit=25`
 
-will give the following **`json`** 
+will give the following **`json`**:
 
 ```json
 {
@@ -89,113 +93,173 @@ will give the following **`json`**
 
 
 
+## Population documentation
+
+This path retrives the population count of the country with the given iso-2 code for each recorded year, and the average population count in this timeframe.
+
+The population page povides the following in **`json`** format:
++ mean (integer)
++ data (object)
+    + populationCounts (list of strings)
+
+
+### Syntax
+
+The general syntax is `http://localhost:8080/countryinfo/v1/population/{:iso}` ***CHANGE LINK***  
+
+`{:iso}` is the two-letter iso code for a given country, eg. `no` for Norway.
+
+Optionally you can set a bound for the start and end year.  
+This limit will include both the start and end year in the retrived output.  
+This means that if you provide eg. '`1990-2003`', all years in that span including 1990 and 2003 will be retrived.  
+If the provided minimum is lower than the first recorded year, the first recorded year will be the minimum bound.  
+
+When there is no provided limit, the bounds will be the earliest recorded year as the minimum bound and the current year as the maximum bound.
+
+The syntax for setting a limit is `http://localhost:8080/countryinfo/v1/population/{:iso}{?limit={:startYear-endYear}}` ***CHANGE LINK***  
+The `{?limit=...}` block is optional, and `{:startYear-endYear}` is the start and end boundaries.  
+***NOTE:*** the '`-`' is mandatory if a limit is provided.
+
+
+Leaving `{?limit}` empty as in `...?limit` or `...?limit=` will be treated as if no limit was provided, and the boundaries will be the earliest recorded year and the current year.
+
+
+
+### Example
+
+The call to  
+
+`http://localhost:8080/countryinfo/v1/population/no?limit=1999-2004`
+
+will give the following **`json`**:
+
+```json
+{
+    "mean": 4526925,
+    "data": {
+        "populationCounts": [
+            {
+                "year": 1999,
+                "value": 4461913
+            },
+            {
+                "year": 2000,
+                "value": 4490967
+            },
+            {
+                "year": 2001,
+                "value": 4513751
+            },
+            {
+                "year": 2002,
+                "value": 4538159
+            },
+            {
+                "year": 2003,
+                "value": 4564855
+            },
+            {
+                "year": 2004,
+                "value": 4591910
+            }
+        ]
+    }
+}
+```
+
+
+
 
 
 ## Error documentation
 
+
 ### Error codes
+
 
 #### Arising from '/population/' path
 
 ##### 200
 
-The provided input in the `{iso}` field is not a two letter iso-2 code.
+The provided input in the `{iso}` field is not a two letter iso-2 code.  
 Make sure it is two letters long.
 
 Example of a valid input:
 `http://localhost:8080/countryinfo/v1/population/gb` ***CHANGE LINK***
 
+
+
 ##### 201
 
-The provided input int the `{iso}` field is valid syntactically, but it didn't match a valid iso-2 code.
+The provided input int the `{iso}` field is valid syntactically, but it didn't match a valid iso-2 code.  
 For a list of valid iso-2 codes, see **[THIS](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements)** link.
 
-## Getting started
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+##### 202
 
-## Add your files
+Two arguments was expected in `{:startYear-endYear}`, but some other amount was provided.  
+Make sure to provide two numbers, separated by a '`-`'  
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+Example scenarios where this error might occur:  
+> `?limit=2000` - too few arguments (1)
+>
+> `?limit=1997-2003-2009` - too many arguments (3)
 
-```
-cd existing_repo
-git remote add origin https://git.gvk.idi.ntnu.no/course/prog2005/prog2005-2025-workspace/sandesol/oblig-1.git
-git branch -M main
-git push -uf origin main
-```
 
-## Integrate with your tools
 
-- [ ] [Set up project integrations](https://git.gvk.idi.ntnu.no/course/prog2005/prog2005-2025-workspace/sandesol/oblig-1/-/settings/integrations)
+##### 203
 
-## Collaborate with your team
+One or both arguments in `{:startYear-endYear}` are empty.  
+Make sure to provide a number before and after the '`-`'.  
+It does not matter what the number is, as long as it is between 0 and the 64-bit integer upper bound (9223372036854775807), as anything above that will not be recognised as a number.  
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+Example scenarios where this error might occur:  
+> `?limit=2003-` - no end year provided
+> 
+> `?limit=-2003` - no start year provided
+>
+> `?limit=-` - neither start year nor end year provided
 
-## Test and Deploy
 
-Use the built-in continuous integration in GitLab.
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+##### 204.1
 
-***
+The first argument of `{:startYear-endYear}` - `startYear` - is not a number.  
+Whitespaces and/or letters are not permitted.  
 
-# Editing this README
+Example scenarios where this error might occur:  
+> `?limit=fish-2004` - fish is not a number
+> 
+> `?limit=2009 -2016` - whitespaces are disallowed
+>
+> `?limit=twothousandandthree-3500` - spelling out numbers does not work unfortunately
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
 
-## Suggestions for a good README
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+##### 204.2
 
-## Name
-Choose a self-explaining name for your project.
+The second argument of `{:startYear-endYear}` - `endYear` - is not a number.  
+Whitespaces and/or letters are not permitted.
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+Example scenarios where this error might occur:  
+> `?limit=0-Christopher Franz` - Christopher Franz is not a number
+> 
+> `?limit=2004- 2023` - whitespaces are disallowed
+>
+> `?limit=1995-9223372036854775808` - 9223372036854775808 is outside the 64-bit integer upper limit (9223372036854775807)
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+##### 205
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+`startYear` is greater than `endYear` in `{:startYear-endYear}`.  
+Start year must be smaller for a valid range to be possible.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+Example scenarios where this error might occur:  
+> `?limit=2023-1999` - 2023 is greater than 1999
+> 
+> `?limit=5000-2000` - 5000 is greater than 2000
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
