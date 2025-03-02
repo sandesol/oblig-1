@@ -86,6 +86,30 @@ will give the following **`json`**
 ```
 
 
+
+
+
+
+
+## Error documentation
+
+### Error codes
+
+#### Arising from '/population/' path
+
+##### 200
+
+The provided input in the `{iso}` field is not a two letter iso-2 code.
+Make sure it is two letters long.
+
+Example of a valid input:
+`http://localhost:8080/countryinfo/v1/population/gb` ***CHANGE LINK***
+
+##### 201
+
+The provided input int the `{iso}` field is valid syntactically, but it didn't match a valid iso-2 code.
+For a list of valid iso-2 codes, see **[THIS](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements)** link.
+
 ## Getting started
 
 To make it easy for you to get started with GitLab, here's a list of recommended next steps.
