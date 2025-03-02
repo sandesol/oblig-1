@@ -18,7 +18,7 @@ func PopulationHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error: iso-2 can only be a 2 letter code. Error code "+fmt.Sprint(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
-	country, err := GetCountry(w, iso) // get country name
+	iso3, err := GetCountry(w, iso) // get country name
 	if err != nil {
 		fmt.Fprintln(w, err.Error()) // might change ???
 		return
@@ -28,7 +28,7 @@ func PopulationHandler(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Fprintln(w, "Limit with no args: \""+limit+"\"")
 
-		errPopNoArgs := FetchPopulation(w, country, "", "")
+		errPopNoArgs := FetchPopulation(w, iso3, "", "")
 		if errPopNoArgs != nil {
 			fmt.Fprintln(w, "Error when fetching population: "+errPopNoArgs.Error()) // --
 			return
@@ -52,7 +52,7 @@ func PopulationHandler(w http.ResponseWriter, r *http.Request) {
 
 		//
 
-		errPopWithArgs := FetchPopulation(w, country, timeframe[0], timeframe[1])
+		errPopWithArgs := FetchPopulation(w, iso3, timeframe[0], timeframe[1])
 		if errPopWithArgs != nil {
 			fmt.Fprintln(w, "Error when fetching population: "+errPopWithArgs.Error()) // --
 		}
@@ -62,12 +62,10 @@ func PopulationHandler(w http.ResponseWriter, r *http.Request) {
 
 func GetCountry(w http.ResponseWriter, iso string) (string, error) {
 	var country struct {
-		Name struct {
-			Common string `json:"common"`
-		} `json:"name"`
+		Iso3 string `json:"cca3"`
 	}
 
-	resp, errGet := http.Get(consts.RESTCOUNTRIESURL + "alpha/" + iso + "?fields=name")
+	resp, errGet := http.Get(consts.RESTCOUNTRIESURL + "alpha/" + iso + "?fields=cca3")
 	if errGet != nil {
 		fmt.Println("(FetchCountry) Error in http.Get: ", errGet.Error()) // debug
 		return "", errors.New("Error in http.Get: " + errGet.Error())     // change me prolly
@@ -85,11 +83,11 @@ func GetCountry(w http.ResponseWriter, iso string) (string, error) {
 		fmt.Println("(FetchCountry) There was an error parsing json: ", errJson.Error())
 	}
 
-	if country.Name.Common == "" {
-		return "", errors.New("Could not retrieve a country from iso code \"" + iso + "\"")
+	if country.Iso3 == "" {
+		return "", errors.New("Could not retrieve an iso3 code from iso2 code \"" + iso + "\"")
 	}
 
-	return country.Name.Common, nil
+	return country.Iso3, nil
 }
 
 //
@@ -100,9 +98,8 @@ func GetCountry(w http.ResponseWriter, iso string) (string, error) {
 
 //
 
-func FetchPopulation(w http.ResponseWriter, country, min, max string) error {
-	var start int
-	var end int
+func FetchPopulation(w http.ResponseWriter, iso3, min, max string) error {
+	var start, end int
 
 	if min != "" {
 		s, errConvStart := strconv.Atoi(min)
@@ -136,7 +133,7 @@ func FetchPopulation(w http.ResponseWriter, country, min, max string) error {
 		} `json:"data"`
 	}
 
-	payload := strings.NewReader(`{"country": "` + country + `"}`)
+	payload := strings.NewReader(`{"iso3": "` + iso3 + `"}`)
 
 	// Makes a post request and handles errors. Defers closing the body response.
 	resp, errPost := http.Post(consts.COUNTRIESNOWURL+"countries/population", "application/json", payload)
@@ -159,8 +156,34 @@ func FetchPopulation(w http.ResponseWriter, country, min, max string) error {
 		fmt.Println("(FetchCities) There was an error parsing json: ", errJson.Error())
 	}
 
-	// TODO: FUNCTIONALITY FOR FILTERING YEARS
+	var i, j = 0, 0
 
+	// finds first instance that matches
+	for ; i < len(wrapper.Data.PopulationCounts); i++ {
+		if start <= wrapper.Data.PopulationCounts[i].Year {
+			break
+		}
+	}
+	for j = len(wrapper.Data.PopulationCounts) - 1; 0 < j; j-- {
+		if end+1 >= wrapper.Data.PopulationCounts[j].Year { // +1 to include the end year
+			break
+		}
+	}
+
+	wrapper.Data.PopulationCounts = wrapper.Data.PopulationCounts[i:j]
+
+	// calculates sum of all years. 'val' is a struct, which is why we do val.Value
+	var sum = 0
+	for _, val := range wrapper.Data.PopulationCounts {
+		sum += val.Value
+	}
+	wrapper.Mean = sum / len(wrapper.Data.PopulationCounts)
+
+	fmt.Print("\n\n\n\n\n\n", wrapper.Mean, "\n\n\n\n\n\n")
+
+	//
+
+	//
 	// vvv DEBUG vvv
 	jsonStatus, errjson := json.MarshalIndent(wrapper, "", "    ")
 	if errjson != nil {
