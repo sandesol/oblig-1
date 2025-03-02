@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -127,6 +128,7 @@ func FetchCities(w http.ResponseWriter, c *Country, limit int) {
 
 	// appends the first 'limit' elements of the temporary structs slice into the original
 	c.Cities = append(c.Cities, temp.Cities[:limit]...)
+	sort.Strings(c.Cities)
 }
 
 /**
