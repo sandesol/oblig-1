@@ -102,12 +102,6 @@ func GetCountry(w http.ResponseWriter, iso string) (string, error) {
 
 //
 
-// TODO : fix 9223372036854775807 ????
-
-// TODO : fix both numbers less than least issue ??????????
-
-// TODO : ---||--- for larger numbers
-
 // TODO : (quick), remove error return in fetchpopulation?
 
 func FetchPopulation(w http.ResponseWriter, iso3, min, max string) error {
@@ -144,7 +138,7 @@ func FetchPopulation(w http.ResponseWriter, iso3, min, max string) error {
 			PopulationCounts []struct {
 				Year  int `json:"year"`
 				Value int `json:"value"`
-			} `json:"populationCounts"`
+			} `json:"populationcounts"`
 		} `json:"data"`
 	}
 
@@ -159,8 +153,6 @@ func FetchPopulation(w http.ResponseWriter, iso3, min, max string) error {
 		return errors.New("")                                                     // :) ???
 	}
 	defer resp.Body.Close()
-
-	fmt.Println("Response: ", resp) // DELETEME
 
 	body, errReadAll := io.ReadAll(resp.Body)
 	if errReadAll != nil {
@@ -177,29 +169,32 @@ func FetchPopulation(w http.ResponseWriter, iso3, min, max string) error {
 	}
 
 	var i, j = 0, 0
-
 	// finds first instance that matches
 	for ; i < len(wrapper.Data.PopulationCounts); i++ {
 		if start <= wrapper.Data.PopulationCounts[i].Year {
 			break
 		}
 	}
-	for j = len(wrapper.Data.PopulationCounts) - 1; 0 < j; j-- {
-		if end+1 >= wrapper.Data.PopulationCounts[j].Year { // +1 to include the end year
+	for j = len(wrapper.Data.PopulationCounts) - 1; 0 <= j; j-- {
+		if end >= wrapper.Data.PopulationCounts[j].Year {
 			break
 		}
 	}
 
-	wrapper.Data.PopulationCounts = wrapper.Data.PopulationCounts[i:j]
+	wrapper.Data.PopulationCounts = wrapper.Data.PopulationCounts[i : j+1]
 
 	// calculates sum of all years. 'val' is a struct, which is why we do val.Value
 	var sum = 0
 	for _, val := range wrapper.Data.PopulationCounts {
 		sum += val.Value
 	}
-	wrapper.Mean = sum / len(wrapper.Data.PopulationCounts)
 
-	fmt.Print("\n\n\n\n\n\n", 0xFFFF, "\n\n\n\n\n\n") // DELETEME
+	// handle division by 0 error if no cities were found
+	if len(wrapper.Data.PopulationCounts) != 0 {
+		wrapper.Mean = sum / len(wrapper.Data.PopulationCounts)
+	} else {
+		wrapper.Mean = 0
+	}
 
 	//
 
