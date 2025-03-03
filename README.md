@@ -166,15 +166,53 @@ will give the following **`json`**:
     }
 }
 ```
-
-
-
-
-
+  
+  
+  
+  
+  
 ## Error documentation
 
 
 ### Error codes
+
+#### Arising from '/info/' path
+
+##### 100
+
+The provided input in the `{iso}` field is not a two letter iso-2 code.  
+Make sure it is two letters long.  
+
+Example of a valid input:  
+`http://localhost:8080/countryinfo/v1/info/se` ***CHANGE LINK***
+  
+
+##### 101
+
+A limit was provided, but it is not an integer.  
+The input in the `?limit=` field must be an integer, not a number with a decimal separator or any other forms of input.  
+Whitespaces are also not valid
+
+Example scenarios where this error might occur:  
+> `?limit=2000.3` - limit is a decimal number
+>
+> `?limit=thirtyfive` - cannot interpret typed out numbers as an intger
+>
+> `?limit= 64` - whitespaces are not allowed
+>
+> `?limit=banana` - banana is not a number
+
+
+##### 102
+
+The provided limit is a number, but it is not positive.  
+The input in the `?limit=` field cannot be a negative number
+
+Example scenarios where this error might occur:  
+> `?limit=-2000` - -2000 is a negative number
+>
+> `?limit=-1` - -1 is negative
+
 
 
 #### Arising from '/population/' path
@@ -184,7 +222,7 @@ will give the following **`json`**:
 The provided input in the `{iso}` field is not a two letter iso-2 code.  
 Make sure it is two letters long.
 
-Example of a valid input:
+Example of a valid input:  
 `http://localhost:8080/countryinfo/v1/population/gb` ***CHANGE LINK***
 
 
