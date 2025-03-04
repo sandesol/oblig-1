@@ -7,6 +7,13 @@ import (
 	"net/http"
 )
 
+/**
+ * Main function.
+ *
+ * - Initializes uptime
+ * - Serves paths .../population/, .../info/, and .../status
+ * - Starts the service and handles errors
+ */
 func main() {
 
 	handlers.InitializeUptime()

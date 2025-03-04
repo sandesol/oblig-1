@@ -166,13 +166,12 @@ will give the following **`json`**:
     }
 }
 ```
-  
-  
-  
-  
-  
-## Error documentation
 
+
+
+
+
+## Error documentation
 
 ### Error codes
 

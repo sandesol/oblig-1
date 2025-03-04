@@ -25,6 +25,16 @@ type Country struct {
 	Cities     []string          `json:"data"`
 }
 
+/**
+ *
+ * A struct that just contains cities.
+ * This struct exists solely to make filtering operations more convenient.
+ *
+ */
+type JutsCities struct {
+	Cities []string `json:"data"`
+}
+
 func InfoHandler(w http.ResponseWriter, r *http.Request) {
 
 	country := Country{}
@@ -34,16 +44,19 @@ func InfoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	FetchCountry(w, &country, iso) // fetches countries first, so we can use country name as a parameter in the post request in FetchCities()
+	// fetches countries first, so we can use country name as a parameter in the post request in FetchCities()
+	FetchCountry(w, &country, iso)
 
 	query := r.URL.Query().Get("limit")
 	if query == "" {
 
-		FetchCities(w, &country, 10) // No limit set, defaults to 10
+		// No limit set, defaults to 10
+		FetchCities(w, &country, 10)
 
 	} else {
 
-		limit, err := strconv.Atoi(r.URL.Query().Get("limit")) // gets limit, converts it to int
+		// gets limit, converts it to int
+		limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 
 		if err != nil {
 			http.Error(w, "Error: limit must be an integer. (Error code 101)", http.StatusBadRequest)
@@ -54,11 +67,13 @@ func InfoHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		FetchCities(w, &country, limit) // passed both tests, limit is valid and we can fetch cities
+		// passed both tests, limit is valid and we can fetch cities
+		FetchCities(w, &country, limit)
 
 	}
 
-	PrintCountry(w, country) // prettyprints the complete country
+	// prettyprints the complete country
+	PrintCountry(w, country)
 }
 
 /**
@@ -89,43 +104,53 @@ func FetchCountry(w http.ResponseWriter, c *Country, iso string) {
 
 /**
  *
- * Fetches all cities via countriesNow
+ * Fetches all cities via countriesNow into a temporary struct, filters the temporary struct based on parameters,
+ * copies the contents of the filtered cities into the "main struct" and finally sorts the cities in ascending order.
  *
- * Country is passed by reference
+ * The fetched cities from CountriesNow are only partially sorted, so we need to manually sort them ourselves
+ *
+ * @param w http.ResponseWriter - used to write error messages to the user if one occurs (if so, will be a 500 error)
+ * @param c *Country            - "main struct" passed by reference, as we want to operate on the original
+ *                                 rather than a copy of it
+ * @param limit int             - how many cities we want to fetch
+ *
  */
 func FetchCities(w http.ResponseWriter, c *Country, limit int) {
 
+	// makes a payload, the input in the POST request with the common name we already have
 	payload := strings.NewReader("{\"country\": \"" + c.Name.Common + "\"}")
-	fmt.Println(c.Name.Common)
 
+	// makes a POST request with the payload and stores the response + logs potential errors
 	resp, errNOW := http.Post(consts.COUNTRIESNOWURL+"countries/cities", "application/json", payload)
 	if errNOW != nil {
-		log.Println("(FetchCities) Error in POST request: ", errNOW.Error())   // :)
-		http.Error(w, "Internal server error", http.StatusInternalServerError) // :) 500
+		log.Println("(FetchCities) Error in POST request: ", errNOW.Error())
+		http.Error(w, "Internal server error", http.StatusInternalServerError) // 500
 		return
 	}
 	defer resp.Body.Close()
 
+	// reads the response body (the json) and stores it as a []byte, so we can unmarshal later + logs potental errors
 	body, errReadAll := io.ReadAll(resp.Body)
 	if errReadAll != nil {
-		log.Println("(FetchCities) Error in io.ReadAll: ", errReadAll.Error()) // :)
-		http.Error(w, "Internal server error", http.StatusInternalServerError) // :) 500
+		log.Println("(FetchCities) Error in io.ReadAll: ", errReadAll.Error())
+		http.Error(w, "Internal server error", http.StatusInternalServerError) // 500
 		return
 	}
 
-	// we use a temporary struct to wrap cities in, because it's less annoying to deal with than working with the original
-	var temp struct {
-		Cities []string `json:"data"`
-	}
+	// temporary struct that just contains cities
+	var temp JutsCities
 
+	// formats the json we fetched into the temporary struct + logs potential errors
 	errJson := json.Unmarshal(body, &temp)
 	if errJson != nil {
-		log.Println("(FetchCities) There was an error parsing json: ", errJson.Error()) // :)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)          // :) 500
+		log.Println("(FetchCities) There was an error parsing json: ", errJson.Error())
+		http.Error(w, "Internal server error", http.StatusInternalServerError) // 500
 	}
 
 	// appends the first 'limit' elements of the temporary structs slice into the original
 	c.Cities = append(c.Cities, temp.Cities[:limit]...)
+
+	// sorts cities, as they are only partially sorted when we fetch them from CountriesNow
 	sort.Strings(c.Cities)
 }
 
