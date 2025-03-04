@@ -3,9 +3,9 @@ package handlers
 import (
 	"assignment1/consts"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"sort"
 	"strconv"
@@ -30,7 +30,7 @@ func InfoHandler(w http.ResponseWriter, r *http.Request) {
 	country := Country{}
 	iso := r.PathValue("two_letter_country_code")
 	if len(iso) != 2 {
-		http.Error(w, "Error: iso-2 can only be a 2 letter code. Error code "+fmt.Sprint(http.StatusBadRequest), http.StatusBadRequest)
+		http.Error(w, "Error: iso-2 must be a 2 letter code. (Error code 100)", http.StatusBadRequest)
 		return
 	}
 
@@ -38,21 +38,19 @@ func InfoHandler(w http.ResponseWriter, r *http.Request) {
 
 	query := r.URL.Query().Get("limit")
 	if query == "" {
-		fmt.Println("No limit :)") // DELETEME
 
 		FetchCities(w, &country, 10) // No limit set, defaults to 10
 
 	} else {
-		fmt.Println("A limit have been set :))))") // DELETEME
 
-		limit, err := strconv.Atoi(r.URL.Query().Get("limit")) // converts gets limit, converts it to int
+		limit, err := strconv.Atoi(r.URL.Query().Get("limit")) // gets limit, converts it to int
 
 		if err != nil {
-			http.Error(w, "Error: limit must be an integer. Error code "+fmt.Sprint(http.StatusBadRequest), http.StatusBadRequest)
+			http.Error(w, "Error: limit must be an integer. (Error code 101)", http.StatusBadRequest)
 			return
 		}
 		if limit < 0 {
-			http.Error(w, "Error: limit must be a positive integer. Error code "+fmt.Sprint(http.StatusBadRequest), http.StatusBadRequest)
+			http.Error(w, "Error: limit must be a positive integer. (Error code 102)", http.StatusBadRequest)
 			return
 		}
 
@@ -60,10 +58,7 @@ func InfoHandler(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	errprint := PrintCountry(w, country) // prettyprints the complete country
-	if errprint != nil {
-		fmt.Println(errprint.Error())
-	}
+	PrintCountry(w, country) // prettyprints the complete country
 }
 
 /**
@@ -105,14 +100,16 @@ func FetchCities(w http.ResponseWriter, c *Country, limit int) {
 
 	resp, errNOW := http.Post(consts.COUNTRIESNOWURL+"countries/cities", "application/json", payload)
 	if errNOW != nil {
-		fmt.Println("(FetchCities) Error in POST request: ", errNOW.Error()) // debug
+		log.Println("(FetchCities) Error in POST request: ", errNOW.Error())   // :)
+		http.Error(w, "Internal server error", http.StatusInternalServerError) // :) 500
 		return
 	}
 	defer resp.Body.Close()
 
 	body, errReadAll := io.ReadAll(resp.Body)
 	if errReadAll != nil {
-		fmt.Println("(FetchCities) Error in io.ReadAll: ", errReadAll.Error()) // debug
+		log.Println("(FetchCities) Error in io.ReadAll: ", errReadAll.Error()) // :)
+		http.Error(w, "Internal server error", http.StatusInternalServerError) // :) 500
 		return
 	}
 
@@ -123,7 +120,8 @@ func FetchCities(w http.ResponseWriter, c *Country, limit int) {
 
 	errJson := json.Unmarshal(body, &temp)
 	if errJson != nil {
-		fmt.Println("(FetchCities) There was an error parsing json: ", errJson.Error())
+		log.Println("(FetchCities) There was an error parsing json: ", errJson.Error()) // :)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)          // :) 500
 	}
 
 	// appends the first 'limit' elements of the temporary structs slice into the original
@@ -140,7 +138,7 @@ func FetchCities(w http.ResponseWriter, c *Country, limit int) {
  *
  * Returns an error if it json.MarshallIndent failed, and nil otherwise
  */
-func PrintCountry(w http.ResponseWriter, c Country) error {
+func PrintCountry(w http.ResponseWriter, c Country) {
 	var country struct {
 		Name       string            `json:"name"`
 		Continents []string          `json:"continents"`
@@ -163,9 +161,9 @@ func PrintCountry(w http.ResponseWriter, c Country) error {
 
 	jsonCOUNTRY, err := json.MarshalIndent(country, "", "    ")
 	if err != nil {
-		return errors.New("Could not marshall json: " + err.Error())
+		log.Println("(PrintCountry) Could not marshall json: " + err.Error())  // :)
+		http.Error(w, "Internal server error", http.StatusInternalServerError) // :) 500
+		return
 	}
 	fmt.Fprint(w, string(jsonCOUNTRY))
-
-	return nil
 }
