@@ -24,6 +24,12 @@ func InitializeUptime() {
 
 func StatusHandler(w http.ResponseWriter, r *http.Request) {
 
+	// Only allows GET methods
+	if r.Method != http.MethodGet {
+		http.Error(w, r.Method+" method is not allowed. Use "+http.MethodGet+" method instead.", http.StatusMethodNotAllowed)
+		return
+	}
+
 	urlNOW := consts.COUNTRIESNOWURL + "countries/population/cities"
 
 	payload := strings.NewReader(`{"city": "oslo"}`)

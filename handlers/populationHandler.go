@@ -14,6 +14,13 @@ import (
 )
 
 func PopulationHandler(w http.ResponseWriter, r *http.Request) {
+
+	// Only allows GET methods
+	if r.Method != http.MethodGet {
+		http.Error(w, r.Method+" method is not allowed. Use "+http.MethodGet+" method instead.", http.StatusMethodNotAllowed)
+		return
+	}
+
 	iso := r.PathValue("two_letter_country_code") // get iso code
 	if len(iso) != 2 {
 		http.Error(w, "Error: iso-2 must be a 2 letter code. (Error code 2000)", http.StatusBadRequest) // 400
