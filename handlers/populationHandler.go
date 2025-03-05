@@ -16,7 +16,7 @@ import (
 func PopulationHandler(w http.ResponseWriter, r *http.Request) {
 	iso := r.PathValue("two_letter_country_code") // get iso code
 	if len(iso) != 2 {
-		http.Error(w, "Error: iso-2 must be a 2 letter code. (Error code 200)", http.StatusBadRequest) // 400
+		http.Error(w, "Error: iso-2 must be a 2 letter code. (Error code 2000)", http.StatusBadRequest) // 400
 		return
 	}
 	iso3, err := GetCountry(w, iso) // get country name
@@ -41,12 +41,12 @@ func PopulationHandler(w http.ResponseWriter, r *http.Request) {
 		timeframe := strings.Split(limit, "-")
 		fmt.Fprintln(w, "Limit with args: \""+limit+"\"       timeframe:", timeframe) // DELETEME
 		if len(timeframe) != 2 {
-			http.Error(w, "Expected 2 arguments, got "+fmt.Sprint(len(timeframe))+". (Error code 202)", http.StatusBadRequest) // :)
-			return                                                                                                             // need 2 args
+			http.Error(w, "Expected 2 arguments, got "+fmt.Sprint(len(timeframe))+". (Error code 2002)", http.StatusBadRequest) // :)
+			return                                                                                                              // need 2 args
 		}
 		if timeframe[0] == "" || timeframe[1] == "" {
-			http.Error(w, "One or more arguments are empty. (Error code 203)", http.StatusBadRequest) // :)
-			return                                                                                    // one or more empty args
+			http.Error(w, "One or more arguments are empty. (Error code 2003)", http.StatusBadRequest) // :)
+			return                                                                                     // one or more empty args
 		}
 
 		//
@@ -110,8 +110,8 @@ func FetchPopulation(w http.ResponseWriter, iso3, min, max string) error {
 	if min != "" {
 		s, errConvStart := strconv.Atoi(min)
 		if errConvStart != nil {
-			http.Error(w, "Start year must be a number. (Error code 204.1)", http.StatusBadRequest) // :) 400
-			return errors.New("")                                                                   // :) ???
+			http.Error(w, "Start year must be a number. (Error code 2004.1)", http.StatusBadRequest) // :) 400
+			return errors.New("")                                                                    // :) ???
 		}
 		start = s
 	} else {
@@ -120,16 +120,16 @@ func FetchPopulation(w http.ResponseWriter, iso3, min, max string) error {
 	if max != "" {
 		e, errConvEnd := strconv.Atoi(max)
 		if errConvEnd != nil {
-			http.Error(w, "End year must be a number. (Error code 204.2)", http.StatusBadRequest) // :) 400
-			return errors.New("")                                                                 // :) ???
+			http.Error(w, "End year must be a number. (Error code 2004.2)", http.StatusBadRequest) // :) 400
+			return errors.New("")                                                                  // :) ???
 		}
 		end = e
 	} else {
 		end = time.Now().Year()
 	}
 	if start > end {
-		http.Error(w, "Start year is greater than end year. (Error code 205)", http.StatusBadRequest) // :) 400
-		return errors.New("")                                                                         // :) ???
+		http.Error(w, "Start year is greater than end year. (Error code 2005)", http.StatusBadRequest) // :) 400
+		return errors.New("")                                                                          // :) ???
 	}
 
 	var wrapper struct {

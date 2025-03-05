@@ -40,7 +40,7 @@ func InfoHandler(w http.ResponseWriter, r *http.Request) {
 	country := Country{}
 	iso := r.PathValue("two_letter_country_code")
 	if len(iso) != 2 {
-		http.Error(w, "Error: iso-2 must be a 2 letter code. (Error code 100)", http.StatusBadRequest)
+		http.Error(w, "Error: iso-2 must be a 2 letter code. (Error code 1000)", http.StatusBadRequest)
 		return
 	}
 
@@ -59,11 +59,11 @@ func InfoHandler(w http.ResponseWriter, r *http.Request) {
 		limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 
 		if err != nil {
-			http.Error(w, "Error: limit must be an integer. (Error code 101)", http.StatusBadRequest)
+			http.Error(w, "Error: limit must be an integer. (Error code 1001)", http.StatusBadRequest)
 			return
 		}
 		if limit < 0 {
-			http.Error(w, "Error: limit must be a positive integer. (Error code 102)", http.StatusBadRequest)
+			http.Error(w, "Error: limit must be a positive integer. (Error code 1002)", http.StatusBadRequest)
 			return
 		}
 

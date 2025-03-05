@@ -177,7 +177,7 @@ will give the following **`json`**:
 
 #### Arising from '/info/' path
 
-##### 100
+##### 1000
 
 The provided input in the `{iso}` field is not a two letter iso-2 code.  
 Make sure it is two letters long.  
@@ -186,7 +186,7 @@ Example of a valid input:
 `http://localhost:8080/countryinfo/v1/info/se` ***CHANGE LINK***
   
 
-##### 101
+##### 1001
 
 A limit was provided, but it is not an integer.  
 The input in the `?limit=` field must be an integer, not a number with a decimal separator or any other forms of input.  
@@ -202,7 +202,7 @@ Example scenarios where this error might occur:
 > `?limit=banana` - banana is not a number
 
 
-##### 102
+##### 1002
 
 The provided limit is a number, but it is not positive.  
 The input in the `?limit=` field cannot be a negative number
@@ -216,7 +216,7 @@ Example scenarios where this error might occur:
 
 #### Arising from '/population/' path
 
-##### 200
+##### 2000
 
 The provided input in the `{iso}` field is not a two letter iso-2 code.  
 Make sure it is two letters long.
@@ -226,14 +226,14 @@ Example of a valid input:
 
 
 
-##### 201
+##### 2001
 
 The provided input int the `{iso}` field is valid syntactically, but it didn't match a valid iso-2 code.  
 For a list of valid iso-2 codes, see **[THIS](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements)** link.
 
 
 
-##### 202
+##### 2002
 
 Two arguments was expected in `{:startYear-endYear}`, but some other amount was provided.  
 Make sure to provide two numbers, separated by a '`-`'  
@@ -245,7 +245,7 @@ Example scenarios where this error might occur:
 
 
 
-##### 203
+##### 2003
 
 One or both arguments in `{:startYear-endYear}` are empty.  
 Make sure to provide a number before and after the '`-`'.  
@@ -260,7 +260,7 @@ Example scenarios where this error might occur:
 
 
 
-##### 204.1
+##### 2004.1
 
 The first argument of `{:startYear-endYear}` - `startYear` - is not a number.  
 Whitespaces and/or letters are not permitted.  
@@ -274,7 +274,7 @@ Example scenarios where this error might occur:
 
 
 
-##### 204.2
+##### 2004.2
 
 The second argument of `{:startYear-endYear}` - `endYear` - is not a number.  
 Whitespaces and/or letters are not permitted.
@@ -288,7 +288,7 @@ Example scenarios where this error might occur:
 
 
 
-##### 205
+##### 2005
 
 `startYear` is greater than `endYear` in `{:startYear-endYear}`.  
 Start year must be smaller for a valid range to be possible.
