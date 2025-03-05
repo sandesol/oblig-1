@@ -299,4 +299,9 @@ Example scenarios where this error might occur:
 > `?limit=5000-2000` - 5000 is greater than 2000
 
 
+#### General error codes
 
+##### 3000
+
+The iso-2 code given is not used.
+For a list of valid iso-2 codes, see **[THIS](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements)** link.

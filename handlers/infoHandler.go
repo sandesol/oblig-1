@@ -96,6 +96,10 @@ func FetchCountry(w http.ResponseWriter, c *Country, iso string) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == http.StatusNotFound {
+		http.Error(w, "Error: iso-2 code is not in use. (Error code 3000)", http.StatusNotFound)
+	}
+
 	body, errReadAll := io.ReadAll(resp.Body)
 	if errReadAll != nil {
 		fmt.Println("(FetchCountry) Error in io.ReadAll: ", errReadAll.Error()) // debug
@@ -134,6 +138,10 @@ func FetchCities(w http.ResponseWriter, c *Country, limit int) {
 		return
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		http.Error(w, "Error: iso-2 code is not in use. (Error code 3000)", http.StatusNotFound)
+	}
 
 	// reads the response body (the json) and stores it as a []byte, so we can unmarshal later + logs potental errors
 	body, errReadAll := io.ReadAll(resp.Body)

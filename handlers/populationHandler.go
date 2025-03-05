@@ -83,6 +83,10 @@ func GetCountry(w http.ResponseWriter, iso string) (string, error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == http.StatusNotFound {
+		http.Error(w, "Error: iso-2 code is not in use. (Error code 3000)", http.StatusNotFound)
+	}
+
 	body, errReadAll := io.ReadAll(resp.Body)
 	if errReadAll != nil {
 		log.Println("(FetchCountry) Error in io.ReadAll: ", errReadAll.Error()) // :)
@@ -98,8 +102,8 @@ func GetCountry(w http.ResponseWriter, iso string) (string, error) {
 	}
 
 	if country.Iso3 == "" {
-		http.Error(w, "Could not retrieve an iso3 code from iso2 code \""+iso+"\". (Error code 201)", http.StatusNotFound) // :) 404
-		return "", errors.New("")                                                                                          // :) ???
+		http.Error(w, "Could not retrieve an iso3 code from iso2 code \""+iso+"\". (Error code 2001)", http.StatusNotFound) // :) 404
+		return "", errors.New("")                                                                                           // :) ???
 	}
 
 	return country.Iso3, nil
@@ -160,6 +164,10 @@ func FetchPopulation(w http.ResponseWriter, iso3, min, max string) error {
 		return errors.New("")                                                     // :) ???
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		http.Error(w, "Error: iso-2 code is not in use. (Error code 3000)", http.StatusNotFound)
+	}
 
 	body, errReadAll := io.ReadAll(resp.Body)
 	if errReadAll != nil {
