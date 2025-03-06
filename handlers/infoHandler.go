@@ -70,7 +70,10 @@ func InfoHandler(w http.ResponseWriter, r *http.Request) {
 	if query == "" {
 
 		// No limit set, defaults to 10
-		FetchCities(w, &country, 10)
+		errCities := FetchCities(w, &country, 10)
+		if errCities != nil {
+			return
+		}
 
 	} else {
 
@@ -87,7 +90,10 @@ func InfoHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// passed both tests, limit is valid and we can fetch cities
-		FetchCities(w, &country, limit)
+		errCities := FetchCities(w, &country, limit)
+		if errCities != nil {
+			return
+		}
 
 	}
 
@@ -149,8 +155,9 @@ func FetchCountry(w http.ResponseWriter, c *Country, iso string) error {
  *                                 rather than a copy of it
  * @param limit int             - how many cities we want to fetch
  *
+ * @returns - an empty error if an error occurs, nil otherwise
  */
-func FetchCities(w http.ResponseWriter, c *Country, limit int) {
+func FetchCities(w http.ResponseWriter, c *Country, limit int) error {
 
 	// makes a payload, the input in the POST request with the common name we already have
 	payload := strings.NewReader("{\"country\": \"" + c.Name.Common + "\"}")
@@ -160,7 +167,7 @@ func FetchCities(w http.ResponseWriter, c *Country, limit int) {
 	if errNOW != nil {
 		log.Println("(FetchCities) Error in POST request: ", errNOW.Error())
 		http.Error(w, "Internal server error", http.StatusInternalServerError) // 500
-		return
+		return errors.New("")
 	}
 	defer resp.Body.Close()
 
@@ -173,7 +180,7 @@ func FetchCities(w http.ResponseWriter, c *Country, limit int) {
 	if errReadAll != nil {
 		log.Println("(FetchCities) Error in io.ReadAll: ", errReadAll.Error())
 		http.Error(w, "Internal server error", http.StatusInternalServerError) // 500
-		return
+		return errors.New("")
 	}
 
 	// temporary struct that just contains cities
@@ -184,6 +191,7 @@ func FetchCities(w http.ResponseWriter, c *Country, limit int) {
 	if errJson != nil {
 		log.Println("(FetchCities) There was an error parsing json: ", errJson.Error())
 		http.Error(w, "Internal server error", http.StatusInternalServerError) // 500
+		return errors.New("")
 	}
 
 	// sorts cities, as they are only partially sorted when we fetch them from CountriesNow
@@ -191,6 +199,7 @@ func FetchCities(w http.ResponseWriter, c *Country, limit int) {
 
 	// appends the first 'limit' elements of the temporary structs slice into the original
 	c.Cities = append(c.Cities, temp.Cities[:limit]...)
+	return nil
 }
 
 /**
