@@ -13,6 +13,12 @@ import (
 	"time"
 )
 
+/**
+ * The driver function that is called by main.go.
+ *
+ * @param w http.ResponseWriter - used to print json and error messages to the user
+ * @param r *http.Request       - used to get request methods, and the limit from the url
+ */
 func PopulationHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Only allows GET methods
@@ -46,7 +52,6 @@ func PopulationHandler(w http.ResponseWriter, r *http.Request) {
 
 	} else {
 		timeframe := strings.Split(limit, "-")
-		fmt.Fprintln(w, "Limit with args: \""+limit+"\"       timeframe:", timeframe) // DELETEME
 		if len(timeframe) != 2 {
 			http.Error(w, "Expected 2 arguments, got "+fmt.Sprint(len(timeframe))+". (Error code 2002)", http.StatusBadRequest) // :)
 			return                                                                                                              // need 2 args
@@ -70,6 +75,15 @@ func PopulationHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+/**
+ * Gets the iso-3 code based on the valid iso-2 code that was passed as a parameter.
+ *
+ * @param w   http.ResponseWriter - used to write errors
+ * @param iso string              - syntactically correct iso-2 code (not necessarily in use though)
+ *
+ * @returns - (string, error) tuple. On error, string is empty and error is an empty string. On OK,
+ *              string is an iso-3 code and error is nil
+ */
 func GetCountry(w http.ResponseWriter, iso string) (string, error) {
 	var country struct {
 		Iso3 string `json:"cca3"`
@@ -77,52 +91,59 @@ func GetCountry(w http.ResponseWriter, iso string) (string, error) {
 
 	resp, errGet := http.Get(consts.RESTCOUNTRIESURL + "alpha/" + iso + "?fields=cca3")
 	if errGet != nil {
-		log.Println("(FetchCountry) Error in http.Get: ", errGet.Error())      // :)
-		http.Error(w, "Internal server error", http.StatusInternalServerError) // :) 500
-		return "", errors.New("")                                              // :) ???
+		log.Println("(FetchCountry) Error in http.Get: ", errGet.Error())
+		http.Error(w, "Internal server error", http.StatusInternalServerError) // 500
+		return "", errors.New("")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
 		http.Error(w, "Error: iso-2 code is not in use. (Error code 3000)", http.StatusNotFound)
+		return "", errors.New("")
 	}
 
 	body, errReadAll := io.ReadAll(resp.Body)
 	if errReadAll != nil {
-		log.Println("(FetchCountry) Error in io.ReadAll: ", errReadAll.Error()) // :)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)  // :) 500
-		return "", errors.New("")                                               // :) ???
+		log.Println("(FetchCountry) Error in io.ReadAll: ", errReadAll.Error())
+		http.Error(w, "Internal server error", http.StatusInternalServerError) // 500
+		return "", errors.New("")
 	}
 
 	errJson := json.Unmarshal(body, &country)
 	if errJson != nil {
-		log.Println("(FetchCountry) Error parsing json with json.Unmarshal: ", errJson.Error()) // :)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)                  // :) 500
-		return "", errors.New("")                                                               // :) ???
+		log.Println("(FetchCountry) Error parsing json with json.Unmarshal: ", errJson.Error())
+		http.Error(w, "Internal server error", http.StatusInternalServerError) // 500
+		return "", errors.New("")
 	}
 
 	if country.Iso3 == "" {
-		http.Error(w, "Could not retrieve an iso3 code from iso2 code \""+iso+"\". (Error code 2001)", http.StatusNotFound) // :) 404
-		return "", errors.New("")                                                                                           // :) ???
+		http.Error(w, "Could not retrieve an iso3 code from iso2 code \""+iso+"\". (Error code 2001)", http.StatusNotFound) // 404
+		return "", errors.New("")
 	}
 
 	return country.Iso3, nil
 }
 
-//
-
-//
-
-// TODO : (quick), remove error return in fetchpopulation?
-
+/**
+ * Fetches the population data into a temporary struct from 'min' to 'max', and prints it out.
+ * Returns an empty error if something went wrong, because we are only interested in checking
+ *  for errors and not in the actual error message itself as the message is handled by http.Error().
+ *
+ * @param w    http.Responsewriter - for sending http errors
+ * @param iso3 string              - iso-3 code of country of interest
+ * @param min  string              - first year we want to get
+ * @param max  string              - last year we want to get
+ *
+ * @returns - error with an empty message if there are any, nil otherwise
+ */
 func FetchPopulation(w http.ResponseWriter, iso3, min, max string) error {
 	var start, end int
 
 	if min != "" {
 		s, errConvStart := strconv.Atoi(min)
 		if errConvStart != nil {
-			http.Error(w, "Start year must be a number. (Error code 2004.1)", http.StatusBadRequest) // :) 400
-			return errors.New("")                                                                    // :) ???
+			http.Error(w, "Start year must be a number. (Error code 2004.1)", http.StatusBadRequest) //  400
+			return errors.New("")
 		}
 		start = s
 	} else {
@@ -131,16 +152,16 @@ func FetchPopulation(w http.ResponseWriter, iso3, min, max string) error {
 	if max != "" {
 		e, errConvEnd := strconv.Atoi(max)
 		if errConvEnd != nil {
-			http.Error(w, "End year must be a number. (Error code 2004.2)", http.StatusBadRequest) // :) 400
-			return errors.New("")                                                                  // :) ???
+			http.Error(w, "End year must be a number. (Error code 2004.2)", http.StatusBadRequest) // 400
+			return errors.New("")
 		}
 		end = e
 	} else {
 		end = time.Now().Year()
 	}
 	if start > end {
-		http.Error(w, "Start year is greater than end year. (Error code 2005)", http.StatusBadRequest) // :) 400
-		return errors.New("")                                                                          // :) ???
+		http.Error(w, "Start year is greater than end year. (Error code 2005)", http.StatusBadRequest) // 400
+		return errors.New("")
 	}
 
 	var wrapper struct {
@@ -159,9 +180,9 @@ func FetchPopulation(w http.ResponseWriter, iso3, min, max string) error {
 	resp, errPost := http.Post(consts.COUNTRIESNOWURL+"countries/population", "application/json", payload)
 
 	if errPost != nil {
-		log.Println("(FetchPopulation) Error in post request: ", errPost.Error()) // :)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)    // :) 500
-		return errors.New("")                                                     // :) ???
+		log.Println("(FetchPopulation) Error in post request: ", errPost.Error())
+		http.Error(w, "Internal server error", http.StatusInternalServerError) // 500
+		return errors.New("")
 	}
 	defer resp.Body.Close()
 
@@ -171,16 +192,16 @@ func FetchPopulation(w http.ResponseWriter, iso3, min, max string) error {
 
 	body, errReadAll := io.ReadAll(resp.Body)
 	if errReadAll != nil {
-		log.Println("(FetchPopulation) Error in io.ReadAll: ", errReadAll.Error()) // :)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)     // :) 500
-		return errors.New("")                                                      // :) ???
+		log.Println("(FetchPopulation) Error in io.ReadAll: ", errReadAll.Error())
+		http.Error(w, "Internal server error", http.StatusInternalServerError) // 500
+		return errors.New("")
 	}
 
 	errJson := json.Unmarshal(body, &wrapper)
 	if errJson != nil {
-		log.Println("(FetchCities) There was an error parsing json: ", errJson.Error()) // TODO
-		http.Error(w, "Internal server error", http.StatusInternalServerError)          // :) 500
-		return errors.New("")                                                           // :) ???
+		log.Println("(FetchCities) There was an error parsing json: ", errJson.Error())
+		http.Error(w, "Internal server error", http.StatusInternalServerError) // 500
+		return errors.New("")
 	}
 
 	var i, j = 0, 0
@@ -211,13 +232,9 @@ func FetchPopulation(w http.ResponseWriter, iso3, min, max string) error {
 		wrapper.Mean = 0
 	}
 
-	//
-
-	//
-	// vvv DEBUG vvv
 	jsonStatus, errjson := json.MarshalIndent(wrapper, "", "    ")
 	if errjson != nil {
-		fmt.Println("Error: ", errjson.Error()) // TODO
+		log.Println("Error: ", errjson.Error())
 	}
 	fmt.Fprintln(w, string(jsonStatus))
 

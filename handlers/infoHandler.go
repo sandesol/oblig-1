@@ -3,6 +3,7 @@ package handlers
 import (
 	"assignment1/consts"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -12,6 +13,9 @@ import (
 	"strings"
 )
 
+/**
+ * Main struct that contains all information about everything
+ */
 type Country struct {
 	Name struct {
 		Common string `json:"common"`
@@ -26,15 +30,19 @@ type Country struct {
 }
 
 /**
- *
  * A struct that just contains cities.
  * This struct exists solely to make filtering operations more convenient.
- *
  */
 type JutsCities struct {
 	Cities []string `json:"data"`
 }
 
+/**
+ * The driver function that is called by main.go.
+ *
+ * @param w http.ResponseWriter - used to print json and error messages to the user
+ * @param r *http.Request       - used to get request methods, and the limit from the url
+ */
 func InfoHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Only allows GET methods
@@ -51,7 +59,12 @@ func InfoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// fetches countries first, so we can use country name as a parameter in the post request in FetchCities()
-	FetchCountry(w, &country, iso)
+	errFetch := FetchCountry(w, &country, iso)
+	if errFetch != nil {
+		return
+		// we do not care about the error message as the error has already been displayed to the user.
+		// we simply return an erorr to properly exit out of the handler
+	}
 
 	query := r.URL.Query().Get("limit")
 	if query == "" {
@@ -83,33 +96,45 @@ func InfoHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 /**
- *	For some odd reason, r.PathValue can only be read once, which means we have to pass iso as a parameter
+ * Fetches everything except cities into the Country pointer 'c'.
+ * For some odd reason, r.PathValue can only be read once, which means we have to pass iso as a parameter
  *
- *	Country is passed by reference
+ * @param w   http.ResponseWriter - writes errors to the user if there are any
+ * @param c   *Country            - country passed by reference, because we want to manipulate the original
+ * @param iso string 			  - iso-2 code of the country we want to fetch
+ *
+ * @returns - an error if there are any, nil otherwise
  */
-func FetchCountry(w http.ResponseWriter, c *Country, iso string) {
+func FetchCountry(w http.ResponseWriter, c *Country, iso string) error {
 
 	resp, errGet := http.Get(consts.RESTCOUNTRIESURL + "alpha/" + iso + consts.RESTCOUNTRIESFILTER)
 	if errGet != nil {
-		fmt.Println("(FetchCountry) Error in http.Get: ", errGet.Error()) // debug
-		return
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		log.Println("(FetchCountry) Error in http.Get: ", errGet.Error()) // debug
+		return errors.New("")
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
 		http.Error(w, "Error: iso-2 code is not in use. (Error code 3000)", http.StatusNotFound)
+		return errors.New("")
 	}
 
 	body, errReadAll := io.ReadAll(resp.Body)
 	if errReadAll != nil {
-		fmt.Println("(FetchCountry) Error in io.ReadAll: ", errReadAll.Error()) // debug
-		return
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		log.Println("(FetchCountry) Error in io.ReadAll: ", errReadAll.Error()) // debug
+		return errors.New("")
 	}
 
 	errJson := json.Unmarshal(body, c)
 	if errJson != nil {
-		fmt.Println("(FetchCountry) There was an error parsing json: ", errJson.Error())
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		log.Println("(FetchCountry) There was an error parsing json: ", errJson.Error())
+		return errors.New("")
 	}
+
+	return nil
 }
 
 /**
@@ -161,11 +186,11 @@ func FetchCities(w http.ResponseWriter, c *Country, limit int) {
 		http.Error(w, "Internal server error", http.StatusInternalServerError) // 500
 	}
 
-	// appends the first 'limit' elements of the temporary structs slice into the original
-	c.Cities = append(c.Cities, temp.Cities[:limit]...)
-
 	// sorts cities, as they are only partially sorted when we fetch them from CountriesNow
 	sort.Strings(c.Cities)
+
+	// appends the first 'limit' elements of the temporary structs slice into the original
+	c.Cities = append(c.Cities, temp.Cities[:limit]...)
 }
 
 /**
@@ -175,7 +200,8 @@ func FetchCities(w http.ResponseWriter, c *Country, limit int) {
  * The reason we make a new one and don't use Country, is because it's not correctly formatted
  * This may not be the best workaround, but eh
  *
- * Returns an error if it json.MarshallIndent failed, and nil otherwise
+ * @param w http.ResponseWriter - writes errors to the user if any
+ * @param c Country             - the country to be printed
  */
 func PrintCountry(w http.ResponseWriter, c Country) {
 	var country struct {
