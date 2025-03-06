@@ -20,13 +20,13 @@ The info page provides the following fields in **`json`** format for a given cou
 
 ### Syntax
 
-The general syntax is `http://localhost:8080/countryinfo/v1/info/{:iso}`               ***CHANGE LINK***  
+The general syntax is `https://oblig-1-x3dn.onrender.com/countryinfo/v1/info/{:iso}`
 
 `{:iso}` is the two-letter iso code for a given country, eg. `no` for Norway.
 
 Optionally, you can set a limit for how many cities to be retrieved. When no limit is given, it will be 10 by default.
 
-The syntax for setting a limit is `http://localhost:8080/countryinfo/v1/info/{:iso}{?limit={:limit}}` where the whole `{?limit=...}` block is optional, and `{:limit}` is the limit, eg. `30`.
+The syntax for setting a limit is `https://oblig-1-x3dn.onrender.com/countryinfo/v1/info/{:iso}{?limit={:limit}}` where the whole `{?limit=...}` block is optional, and `{:limit}` is the limit, eg. `30`.
 
 Leaving `{?limit}` empty as in `...?limit` or `...?limit=` will be treated as having no limit, and will return all cities.
 
@@ -34,7 +34,7 @@ Leaving `{?limit}` empty as in `...?limit` or `...?limit=` will be treated as ha
 
 The call to
 
-`http://localhost:8080/countryinfo/v1/info/no?limit=25`
+`https://oblig-1-x3dn.onrender.com/countryinfo/v1/info/no?limit=25`
 
 will give the following **`json`**:
 
@@ -105,7 +105,7 @@ The population page povides the following in **`json`** format:
 
 ### Syntax
 
-The general syntax is `http://localhost:8080/countryinfo/v1/population/{:iso}` ***CHANGE LINK***  
+The general syntax is `https://oblig-1-x3dn.onrender.com/countryinfo/v1/population/{:iso}`  
 
 `{:iso}` is the two-letter iso code for a given country, eg. `no` for Norway.
 
@@ -116,7 +116,7 @@ If the provided minimum is lower than the first recorded year, the first recorde
 
 When there is no provided limit, the bounds will be the earliest recorded year as the minimum bound and the current year as the maximum bound.
 
-The syntax for setting a limit is `http://localhost:8080/countryinfo/v1/population/{:iso}{?limit={:startYear-endYear}}` ***CHANGE LINK***  
+The syntax for setting a limit is `https://oblig-1-x3dn.onrender.com/countryinfo/v1/population/{:iso}{?limit={:startYear-endYear}}`
 The `{?limit=...}` block is optional, and `{:startYear-endYear}` is the start and end boundaries.  
 ***NOTE:*** the '`-`' is mandatory if a limit is provided.
 
@@ -183,7 +183,7 @@ The provided input in the `{iso}` field is not a two letter iso-2 code.
 Make sure it is two letters long.  
 
 Example of a valid input:  
-`http://localhost:8080/countryinfo/v1/info/se` ***CHANGE LINK***
+`https://oblig-1-x3dn.onrender.com/countryinfo/v1/info/se`
   
 
 ##### 1001
@@ -222,7 +222,7 @@ The provided input in the `{iso}` field is not a two letter iso-2 code.
 Make sure it is two letters long.
 
 Example of a valid input:  
-`http://localhost:8080/countryinfo/v1/population/gb` ***CHANGE LINK***
+`https://oblig-1-x3dn.onrender.com/countryinfo/v1/population/gb`
 
 
 
