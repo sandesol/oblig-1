@@ -61,15 +61,9 @@ func PopulationHandler(w http.ResponseWriter, r *http.Request) {
 			return                                                                                     // one or more empty args
 		}
 
-		//
-
-		//
-
-		//
-
 		errPopWithArgs := FetchPopulation(w, iso3, timeframe[0], timeframe[1])
 		if errPopWithArgs != nil {
-			fmt.Fprintln(w, "Error when fetching population: "+errPopWithArgs.Error()) // TODO
+			return
 		}
 	}
 
